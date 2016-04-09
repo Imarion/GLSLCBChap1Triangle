@@ -143,11 +143,14 @@ void MyWindow::render()
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, mPositionBufferHandle);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    mFuncs->glBindVertexBuffer(0, mPositionBufferHandle, 0, sizeof(GLfloat) * 3);
+    mFuncs->glBindVertexBuffer(1, mColorBufferHandle,    0, sizeof(GLfloat) * 3);
 
-    glBindBuffer(GL_ARRAY_BUFFER, mColorBufferHandle);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+    mFuncs->glVertexAttribFormat(0, 3, GL_FLOAT, GL_FALSE, 0);
+    mFuncs->glVertexAttribBinding(0, 0);
+
+    mFuncs->glVertexAttribFormat(1, 3, GL_FLOAT, GL_FALSE, 0);
+    mFuncs->glVertexAttribBinding(1, 1);
 
     mProgram->bind();
     {
