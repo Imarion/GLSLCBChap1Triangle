@@ -14,20 +14,14 @@
 #include <cmath>
 #include <cstring>
 
-#include "vertex.h"
-
 MyWindow::~MyWindow()
 {
-    if (mVertices != 0)  delete[] mVertices;
-    if (mIndices  != 0)  delete[] mIndices;
-    if (mProgram != 0)   delete   mProgram;
+    if (mProgram  != 0)   delete   mProgram;
 }
 
 MyWindow::MyWindow() : currentTimeMs(0), currentTimeS(0)
 {
-    mVertices = 0;
-    mIndices  = 0;
-    mProgram = 0;
+    mProgram  = 0;
 
     setSurfaceType(QWindow::OpenGLSurface);
     setFlags(Qt::Window | Qt::WindowSystemMenuHint | Qt::WindowTitleHint | Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
@@ -85,17 +79,6 @@ void MyWindow::initialize()
 
     CreateVertexBuffer();
     initShaders();
-    initBlobSettings();
-
-    modelMatrixLocation = mProgram->uniformLocation("modelMatrix");
-    mModel4tri1.translate(-0.5f, 0.5f, 0.0f);
-    mModel4tri1.scale(0.5f);
-
-    mModel4tri2.translate(0.5f, 0.5f, 0.0f);
-    mModel4tri2.scale(0.5f);
-
-    mModel4tri3.translate(0.0f, -0.5f, 0.0f);
-    mModel4tri3.scale(0.5f);
 
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
@@ -105,61 +88,29 @@ void MyWindow::initialize()
 
 void MyWindow::CreateVertexBuffer()
 {
-    // C++11 required
-    mVertices = new VertexTex[4] {
-        VertexTex(QVector3D( -0.5f,  -0.5f, 0.0f),  QVector2D( 0.0f, 0.0f)),
-        VertexTex(QVector3D(  0.5f,  -0.5f, 0.0f),  QVector2D( 1.0f, 0.0f)),
-        VertexTex(QVector3D(  0.5f,   0.5f, 0.0f),  QVector2D( 1.0f, 1.0f)),
-        VertexTex(QVector3D( -0.5f,   0.5f, 0.0f),  QVector2D( 0.0f, 1.0f))
+    float positionDate[] = {
+        -0.8f, -0.8f, 0.0f,
+         0.8f, -0.8f, 0.0f,
+         0.0f,  0.8f, 0.0f
     };
 
-    mIndices = new unsigned int[6] {
-         0, 1, 2,
-         2, 3, 0
+    float colorData[]= {
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 1.0f,
     };
 
-    glGenBuffers(1, &mVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, mVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(mVertices[0])*4, mVertices, GL_STATIC_DRAW);
+    GLuint vboHandles[2];
 
-    glGenBuffers(1, &mIBO);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mIBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(mIndices[0])*6, mIndices, GL_STATIC_DRAW);
-}
+    glGenBuffers(2, vboHandles);
+    mPositionBufferHandle = vboHandles[0];
+    mColorBufferHandle    = vboHandles[1];
 
-void MyWindow::initBlobSettings()
-{
-    GLuint blobSettingsLocation;
-    blobSettingsLocation = mFuncs->glGetUniformBlockIndex(mProgram->programId(), "BlobSettings");
-    glowFactorLocation   = mProgram->uniformLocation("GlowFactor");
+    glBindBuffer(GL_ARRAY_BUFFER, mPositionBufferHandle);
+    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), positionDate, GL_STATIC_DRAW);
 
-    GLint blockSize;
-    mFuncs->glGetActiveUniformBlockiv(mProgram->programId(), blobSettingsLocation, GL_UNIFORM_BLOCK_DATA_SIZE, &blockSize);
-    GLubyte *blockBuffer= new GLubyte[blockSize];
-
-    // Query for the offsets of each block variable
-    const GLchar *names[] = { "InnerColor", "OuterColor", "RadiusInner", "RadiusOuter" };
-    GLuint indices[4];
-    mFuncs->glGetUniformIndices(mProgram->programId(), 4, names, indices);
-
-    GLint offset[4];
-    mFuncs->glGetActiveUniformsiv(mProgram->programId(), 4, indices, GL_UNIFORM_OFFSET, offset);
-
-    GLfloat outerColor[] = {0.0f, 0.0f, 0.0f, 0.0f};
-    GLfloat innerColor[] = {1.0f, 1.0f, 0.75f, 1.0f};
-    GLfloat innerRadius = 0.25f, outerRadius = 0.45f;
-
-    memcpy(blockBuffer + offset[0], innerColor, 4 * sizeof(GLfloat));
-    memcpy(blockBuffer + offset[1], outerColor, 4 * sizeof(GLfloat));
-    memcpy(blockBuffer + offset[2], &innerRadius, sizeof(GLfloat));
-    memcpy(blockBuffer + offset[3], &outerRadius, sizeof(GLfloat));
-
-    glGenBuffers(1, &mUBO);
-    glBindBuffer(GL_UNIFORM_BUFFER, mUBO);
-    glBufferData(GL_UNIFORM_BUFFER, blockSize, blockBuffer, GL_DYNAMIC_DRAW);
-    mFuncs->glBindBufferBase(GL_UNIFORM_BUFFER, blobSettingsLocation, mUBO);
-
-    delete[] blockBuffer;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mColorBufferHandle);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, 9 * sizeof(float), colorData, GL_STATIC_DRAW);
 }
 
 void MyWindow::resizeEvent(QResizeEvent *)
@@ -189,29 +140,18 @@ void MyWindow::render()
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    static float Scale = 0.0f;
-    Scale += 0.03f;
-
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
 
-    glBindBuffer(GL_ARRAY_BUFFER, mVBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(VertexTex), 0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(VertexTex), (const GLvoid *)((sizeof(mVertices[0].getPos()))+(sizeof(mVertices[0].getNormal()))));
+    glBindBuffer(GL_ARRAY_BUFFER, mPositionBufferHandle);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+    glBindBuffer(GL_ARRAY_BUFFER, mColorBufferHandle);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
     mProgram->bind();
     {
-        glUniform1f(glowFactorLocation, 1.0f);
-        glUniformMatrix4fv(modelMatrixLocation,  1, GL_FALSE, mModel4tri1.constData());
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        glUniform1f(glowFactorLocation, 0.6f);
-        glUniformMatrix4fv(modelMatrixLocation,  1, GL_FALSE, mModel4tri2.constData());
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
-        glUniform1f(glowFactorLocation, fabs(sin(Scale)) * 0.4f + 0.6f);
-        glUniformMatrix4fv(modelMatrixLocation,  1, GL_FALSE, mModel4tri3.constData());
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
@@ -309,50 +249,4 @@ void MyWindow::printMatrix(const QMatrix4x4& mat)
     {
         qDebug() << locMat[i*4] << " " << locMat[i*4+1] << " " << locMat[i*4+2] << " " << locMat[i*4+3];
     }
-}
-
-void MyWindow::PrintCoordOglDevOrig(QVector3D pos, QVector3D cameraPos)
-{
-    QVector3D toCamera = QVector3D(cameraPos - pos).normalized();
-    QVector3D up(0.0, 1.0, 0.0);
-    QVector3D right = QVector3D::crossProduct(toCamera, up);
-    QVector3D Pos(pos);
-
-    qDebug() << "tocam: " << toCamera << " right: " << right;
-
-    Pos -= (right * 0.5);
-    qDebug() << "pos1: " << Pos;
-
-    Pos.setY(Pos.y()+1.0);
-    qDebug() << "pos2: " << Pos;
-
-    Pos.setY(Pos.y()-1.0);
-    Pos += right;
-    qDebug() << "pos3: " << Pos;
-
-    Pos.setY(Pos.y()+1.0);
-    qDebug() << "pos4: " << Pos;
-}
-
-void MyWindow::PrintCoordMoiRightHanded(QVector3D pos, QVector3D cameraPos)
-{
-    QVector3D toCamera = QVector3D(cameraPos - pos).normalized();
-    QVector3D up(0.0, 1.0, 0.0);
-    QVector3D right = QVector3D::crossProduct(up, toCamera);
-    QVector3D Pos(pos);
-
-    qDebug() << "tocam: " << toCamera << " right: " << right;
-
-    Pos += (right * 0.5);
-    qDebug() << "pos1: " << Pos;
-
-    Pos.setY(Pos.y()+1.0);
-    qDebug() << "pos2: " << Pos;
-
-    Pos -= right;
-    Pos.setY(Pos.y()-1.0);
-    qDebug() << "pos3: " << Pos;
-
-    Pos.setY(Pos.y()+1.0);
-    qDebug() << "pos4: " << Pos;
 }

@@ -12,8 +12,6 @@
 
 #include <QOpenGLShaderProgram>
 
-#include "vertextex.h"
-
 #define ToRadian(x) ((x) * M_PI / 180.0f)
 #define ToDegree(x) ((x) * 180.0f / M_PI)
 
@@ -35,13 +33,9 @@ private:
     void modCurTime();
 
     void initShaders();
-    void CreateVertexBuffer();
-    void initBlobSettings();
+    void CreateVertexBuffer();    
 
     void PrepareTexture(GLenum TextureTarget, const QString& FileName, GLuint& TexObject, bool flip);
-
-    void PrintCoordOglDevOrig(QVector3D pos, QVector3D camera);
-    void PrintCoordMoiRightHanded(QVector3D pos, QVector3D camera);
 
 protected:
     void resizeEvent(QResizeEvent *);
@@ -57,12 +51,8 @@ private:
     double currentTimeS;
     bool   mUpdateSize;
 
-    GLuint mVAO, mVBO, mIBO, mUBO;
-    GLuint modelMatrixLocation, glowFactorLocation;
-    QMatrix4x4 mModel4tri1, mModel4tri2, mModel4tri3;
-
-    VertexTex     *mVertices;
-    unsigned int  *mIndices;
+    GLuint mVAO, mVBO, mIBO;
+    GLuint mPositionBufferHandle, mColorBufferHandle;
 
     //debug
     void printMatrix(const QMatrix4x4& mat);
