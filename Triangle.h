@@ -53,6 +53,7 @@ private:
 
     GLuint mVAO, mVBO, mIBO;
     GLuint mPositionBufferHandle, mColorBufferHandle;
+    GLuint mRotationMatrixLocation;
 
     //debug
     void printMatrix(const QMatrix4x4& mat);

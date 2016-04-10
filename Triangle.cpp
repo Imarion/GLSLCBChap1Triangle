@@ -80,6 +80,8 @@ void MyWindow::initialize()
     CreateVertexBuffer();
     initShaders();
 
+    mRotationMatrixLocation = mProgram->uniformLocation("RotationMatrix");
+
     glFrontFace(GL_CCW);
     glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
@@ -137,8 +139,15 @@ void MyWindow::render()
         mUpdateSize = false;
     }
 
+    static float EvolvingVal = 0;
+    EvolvingVal += 0.1f;
+
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    QMatrix4x4 RotationMatrix;
+
+    RotationMatrix.rotate(EvolvingVal, QVector3D(0.0f, 0.0f, 0.1f));
 
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
@@ -154,13 +163,13 @@ void MyWindow::render()
 
     mProgram->bind();
     {
+        glUniformMatrix4fv(mRotationMatrixLocation, 1, GL_FALSE, RotationMatrix.constData());
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
         glDisableVertexAttribArray(0);
         glDisableVertexAttribArray(1);
     }
     mProgram->release();
-
 
     mContext->swapBuffers(this);
 }
