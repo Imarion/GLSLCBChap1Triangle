@@ -90,7 +90,7 @@ void MyWindow::initialize()
 
 void MyWindow::CreateVertexBuffer()
 {
-    float positionDate[] = {
+    float positionData[] = {
         -0.8f, -0.8f, 0.0f,
          0.8f, -0.8f, 0.0f,
          0.0f,  0.8f, 0.0f
@@ -109,7 +109,7 @@ void MyWindow::CreateVertexBuffer()
     mColorBufferHandle    = vboHandles[1];
 
     glBindBuffer(GL_ARRAY_BUFFER, mPositionBufferHandle);
-    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), positionDate, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), positionData, GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mColorBufferHandle);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, 9 * sizeof(float), colorData, GL_STATIC_DRAW);
